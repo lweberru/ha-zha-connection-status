@@ -1,0 +1,43 @@
+# ZHA Connection Status
+
+[Deutsch](README.de.md)
+
+A Home Assistant custom integration that monitors the availability of ZHA Zigbee devices. It creates a notification in the Home Assistant frontend and notifies any number of mobile devices when a device becomes unavailable. When the device reconnects, the frontend notification is dismissed and selected devices can optionally receive a recovery notification.
+
+## Features
+
+- Monitors all ZHA entities for the `unavailable` and `unknown` states.
+- Waits for a configurable period before sending an offline notification (30 seconds by default), avoiding alerts for short interruptions.
+- Creates one persistent frontend notification per Zigbee device.
+- Automatically dismisses the notification once the device reconnects.
+- Restores monitoring cleanly after Home Assistant restarts and integration updates without duplicating mobile alerts.
+- Supports any number of `notify` services, with separate recipient lists for offline and recovery notifications.
+
+## Installation through HACS
+
+1. Open HACS in Home Assistant and go to **Integrations**.
+2. Select the three-dot menu, then **Custom repositories**.
+3. Add `https://github.com/weberruss/ha-zha-connection-status` with the **Integration** category.
+4. Search for **ZHA Connection Status**, install the integration, and restart Home Assistant.
+5. Go to **Settings > Devices & services > Add integration** and add **ZHA Connection Status**.
+
+## Configuration
+
+Choose from the available `notify` services during setup.
+
+- **Offline notification recipients:** These devices always receive the offline notification.
+- **Online notification recipients:** Only these devices receive the notification that the device is available again. This enables recovery notifications for each mobile device individually.
+- **Wait time:** The number of seconds a device must be unavailable before a notification is sent.
+- **Notification language:** The language of frontend and mobile notifications. English is the default; German is also available.
+
+You can change these settings later by selecting **Configure** for the integration.
+
+## Requirements
+
+- Home Assistant 2024.4 or newer
+- The official [ZHA integration](https://www.home-assistant.io/integrations/zha/)
+- At least one configured notify service, such as the Home Assistant Companion App
+
+## Development
+
+The integration resides in `custom_components/zha_connection_status`. For a local installation, copy this directory to `<config>/custom_components/` and restart Home Assistant.

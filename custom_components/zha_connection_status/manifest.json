@@ -1,0 +1,12 @@
+{
+  "domain": "zha_connection_status",
+  "name": "ZHA Connection Status",
+  "codeowners": ["@weberruss"],
+  "config_flow": true,
+  "documentation": "https://github.com/weberruss/ha-zha-connection-status",
+  "integration_type": "service",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/weberruss/ha-zha-connection-status/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}

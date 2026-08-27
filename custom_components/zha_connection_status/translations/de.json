@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "ZHA Connection Status einrichten",
+        "description": "Wahle die Notify-Dienste aus, die Benachrichtigungen erhalten sollen.",
+        "data": {
+          "notification_targets": "Empfanger fur Offline-Meldungen",
+          "recovery_targets": "Empfanger fur Online-Meldungen",
+          "delay": "Wartezeit vor Offline-Meldung (Sekunden)",
+          "language": "Sprache der Benachrichtigungen"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "ZHA Connection Status",
+        "description": "Online-Meldungen werden nur an die dafur ausgewahlten Gerate gesendet.",
+        "data": {
+          "notification_targets": "Empfanger fur Offline-Meldungen",
+          "recovery_targets": "Empfanger fur Online-Meldungen",
+          "delay": "Wartezeit vor Offline-Meldung (Sekunden)",
+          "language": "Sprache der Benachrichtigungen"
+        }
+      }
+    }
+  }
+}
