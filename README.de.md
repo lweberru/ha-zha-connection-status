@@ -12,6 +12,7 @@ Eine Home-Assistant-Custom-Integration, die die Verfügbarkeit von ZHA- und Phil
 - Entfernt diese Benachrichtigung bei erfolgreichem Reconnect automatisch.
 - Stellt die Überwachung nach Home-Assistant-Neustarts und Integrationsupdates sauber wieder her, ohne Mobile-Meldungen zu duplizieren.
 - Unterstützt beliebig viele `notify`-Dienste und getrennte Empfängerlisten für Offline- und Online-Meldungen.
+- Fügt einen diagnostischen Sensor **Verbindungsstatus** hinzu. Sein Zustand ist die Zahl nicht erreichbarer Geräte; seine Attribute zeigen überwachte ZHA-/Hue-Geräte, batteriebetriebene Geräte und Geräte mit niedrigem Batteriestand.
 
 ## Installation über HACS
 

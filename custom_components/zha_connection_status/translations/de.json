@@ -28,5 +28,20 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "connection_status": {
+        "name": "Verbindungsstatus",
+        "state_attributes": {
+          "monitored_devices": {"name": "Überwachte Geräte"},
+          "zha_devices": {"name": "ZHA-Geräte"},
+          "hue_devices": {"name": "Philips-Hue-Geräte"},
+          "unavailable_devices": {"name": "Nicht erreichbare Geräte"},
+          "battery_devices": {"name": "Batteriebetriebene Geräte"},
+          "low_battery_devices": {"name": "Geräte mit niedrigem Batteriestand"}
+        }
+      }
+    }
   }
 }

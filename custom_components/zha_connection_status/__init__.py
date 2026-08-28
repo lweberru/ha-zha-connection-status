@@ -6,7 +6,7 @@ from collections.abc import Callable
 
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EVENT_STATE_CHANGED
+from homeassistant.const import EVENT_STATE_CHANGED, Platform
 from homeassistant.core import Event, HomeAssistant, State, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -32,6 +32,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up ZHA Connection Status from a config entry."""
     monitor = ConnectionStatusMonitor(hass, entry)
     entry.runtime_data = monitor
+    await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR])
     entry.async_on_unload(monitor.async_start())
     return True
 
@@ -40,7 +41,7 @@ async def async_unload_entry(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> bool:
     """Unload a config entry."""
-    return True
+    return await hass.config_entries.async_unload_platforms(entry, [Platform.SENSOR])
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -70,6 +71,7 @@ class ConnectionStatusMonitor:
         self.device_registry = dr.async_get(hass)
         self.pending_checks: dict[str, Callable[[], None]] = {}
         self.offline_devices: set[str] = set()
+        self._listeners: set[Callable[[], None]] = set()
         language = entry.options.get(CONF_LANGUAGE, DEFAULT_LANGUAGE)
         self.messages = MESSAGES.get(language, MESSAGES[DEFAULT_LANGUAGE])
 
@@ -90,6 +92,58 @@ class ConnectionStatusMonitor:
             self.pending_checks.clear()
 
         return async_stop
+
+    @callback
+    def async_add_listener(self, listener: Callable[[], None]) -> Callable[[], None]:
+        """Register a listener that receives availability summary updates."""
+        self._listeners.add(listener)
+
+        @callback
+        def async_remove_listener() -> None:
+            self._listeners.discard(listener)
+
+        return async_remove_listener
+
+    @callback
+    def _async_notify_listeners(self) -> None:
+        """Notify status entities about a changed device state."""
+        for listener in self._listeners:
+            listener()
+
+    @property
+    def status_summary(self) -> dict[str, int]:
+        """Return the current monitored-device availability summary."""
+        device_platforms: dict[str, set[str]] = {}
+        for registry_entry in self.entity_registry.entities.values():
+            if (
+                registry_entry.platform in ZIGBEE_PLATFORMS
+                and registry_entry.device_id
+            ):
+                device_platforms.setdefault(registry_entry.device_id, set()).add(
+                    registry_entry.platform
+                )
+
+        device_ids = device_platforms.keys()
+        threshold = self.entry.options.get(
+            CONF_LOW_BATTERY_THRESHOLD, DEFAULT_LOW_BATTERY_THRESHOLD
+        )
+        battery_levels = {
+            device_id: self._battery_level(device_id) for device_id in device_ids
+        }
+        return {
+            "monitored_devices": len(device_platforms),
+            "zha_devices": sum("zha" in platforms for platforms in device_platforms.values()),
+            "hue_devices": sum("hue" in platforms for platforms in device_platforms.values()),
+            "unavailable_devices": sum(
+                self._async_unavailable_entity_id(device_id) is not None
+                for device_id in device_ids
+            ),
+            "battery_devices": sum(level is not None for level in battery_levels.values()),
+            "low_battery_devices": sum(
+                level is not None and level <= threshold
+                for level in battery_levels.values()
+            ),
+        }
 
     @callback
     def _async_restore_device_states(self) -> None:
@@ -119,6 +173,8 @@ class ConnectionStatusMonitor:
                     {"notification_id": notification_id},
                 )
 
+        self._async_notify_listeners()
+
     @callback
     def _async_handle_state_change(self, event: Event) -> None:
         """Handle a monitored Zigbee entity availability transition."""
@@ -145,6 +201,8 @@ class ConnectionStatusMonitor:
         elif was_unavailable and not is_unavailable:
             self._async_handle_recovery(device_id, entity_id, new_state)
 
+        self._async_notify_listeners()
+
     @callback
     def _async_schedule_offline_check(self, device_id: str) -> None:
         """Wait before announcing a device as unavailable."""
@@ -157,6 +215,7 @@ class ConnectionStatusMonitor:
             delay,
             lambda _now: self._async_confirm_offline(device_id),
         )
+        self._async_notify_listeners()
 
     @callback
     def _async_confirm_offline(self, device_id: str) -> None:
@@ -164,6 +223,7 @@ class ConnectionStatusMonitor:
         self.pending_checks.pop(device_id, None)
         entity_id = self._async_unavailable_entity_id(device_id)
         if not entity_id:
+            self._async_notify_listeners()
             return
 
         device_name = self._device_name(device_id, entity_id)
@@ -175,6 +235,7 @@ class ConnectionStatusMonitor:
         if self.hass.states.get(
             f"persistent_notification.{self._notification_id(device_id)}"
         ):
+            self._async_notify_listeners()
             return
 
         self.hass.services.async_call(
@@ -200,6 +261,7 @@ class ConnectionStatusMonitor:
                 battery_context=battery_context,
             ),
         )
+        self._async_notify_listeners()
 
     @callback
     def _async_handle_recovery(
@@ -211,12 +273,14 @@ class ConnectionStatusMonitor:
             cancel_check()
 
         if self._async_unavailable_entity_id(device_id):
+            self._async_notify_listeners()
             return
 
         notification_state = self.hass.states.get(
             f"persistent_notification.{self._notification_id(device_id)}"
         )
         if device_id not in self.offline_devices and notification_state is None:
+            self._async_notify_listeners()
             return
 
         self.offline_devices.discard(device_id)
@@ -231,6 +295,7 @@ class ConnectionStatusMonitor:
             self.messages["online_title"],
             self.messages["online_mobile"].format(device_name=device_name),
         )
+        self._async_notify_listeners()
 
     @callback
     def _async_unavailable_entity_id(self, device_id: str) -> str | None:
@@ -245,6 +310,19 @@ class ConnectionStatusMonitor:
 
     def _battery_context(self, device_id: str) -> str:
         """Return the latest battery information for a battery-powered device."""
+        battery_level = self._battery_level(device_id)
+        if battery_level is None:
+            return ""
+
+        battery_level_text = f"{battery_level:g}"
+        threshold = self.entry.options.get(
+            CONF_LOW_BATTERY_THRESHOLD, DEFAULT_LOW_BATTERY_THRESHOLD
+        )
+        message_key = "low_battery" if battery_level <= threshold else "battery_level"
+        return self.messages[message_key].format(battery_level=battery_level_text)
+
+    def _battery_level(self, device_id: str) -> float | None:
+        """Return the latest reported battery level for a device."""
         for registry_entry in er.async_entries_for_device(self.entity_registry, device_id):
             if registry_entry.device_class != SensorDeviceClass.BATTERY:
                 continue
@@ -261,14 +339,9 @@ class ConnectionStatusMonitor:
             if not 0 <= battery_level <= 100:
                 continue
 
-            battery_level_text = f"{battery_level:g}"
-            threshold = self.entry.options.get(
-                CONF_LOW_BATTERY_THRESHOLD, DEFAULT_LOW_BATTERY_THRESHOLD
-            )
-            message_key = "low_battery" if battery_level <= threshold else "battery_level"
-            return self.messages[message_key].format(battery_level=battery_level_text)
+            return battery_level
 
-        return ""
+        return None
 
     def _device_name(self, device_id: str, entity_id: str) -> str:
         """Return the device name, falling back to the entity name."""

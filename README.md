@@ -12,6 +12,7 @@ A Home Assistant custom integration that monitors the availability of ZHA and Ph
 - Automatically dismisses the notification once the device reconnects.
 - Restores monitoring cleanly after Home Assistant restarts and integration updates without duplicating mobile alerts.
 - Supports any number of `notify` services, with separate recipient lists for offline and recovery notifications.
+- Adds a diagnostic **Connection status** sensor. Its state is the number of unavailable devices; its attributes show monitored ZHA/Hue devices, battery-powered devices, and low-battery devices.
 
 ## Installation through HACS
 
