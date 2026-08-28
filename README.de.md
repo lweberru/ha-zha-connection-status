@@ -6,13 +6,14 @@ Eine Home-Assistant-Custom-Integration, die die Verfügbarkeit von ZHA- und Phil
 
 ## Funktionen
 
-- Überwacht ZHA- und Philips-Hue-Entities auf die Zustände `unavailable` und `unknown`.
+- Verwendet für ZHA den gerätebasierten Status `available` aus dem ZHA-Backend, dieselbe Quelle wie die ZHA-Geräteliste, statt einzelner Entity-Zustände wie LQI oder RSSI.
+- Verwendet für Philips Hue den Zigbee-Konnektivitätsstatus der Bridge, sofern er verfügbar ist; Entity-Zustände dienen nur als Rückfallebene.
 - Wartet vor der Offline-Meldung eine einstellbare Zeit (standardmäßig 30 Sekunden), damit kurze Aussetzer nicht stören.
 - Erstellt genau eine persistente Frontend-Benachrichtigung pro Zigbee-Gerät.
 - Entfernt diese Benachrichtigung bei erfolgreichem Reconnect automatisch.
 - Stellt die Überwachung nach Home-Assistant-Neustarts und Integrationsupdates sauber wieder her, ohne Mobile-Meldungen zu duplizieren.
 - Unterstützt beliebig viele `notify`-Dienste und getrennte Empfängerlisten für Offline- und Online-Meldungen.
-- Fügt einen diagnostischen Sensor **Verbindungsstatus** hinzu. Sein Zustand ist die Zahl der Geräte, bei denen alle relevanten Entities nicht verfügbar sind; seine Attribute zeigen überwachte ZHA-/Hue-Geräte, batteriebetriebene Geräte und Geräte mit niedrigem Batteriestand. Szenen, Buttons, Events und Update-Entities werden für die Verbindungsprüfung ausgeschlossen. Der Sensor aktualisiert sich bei Zustandsänderungen sofort und gleicht sich als Rückfallebene jede Minute ab.
+- Fügt einen diagnostischen Sensor **Verbindungsstatus** hinzu. Sein Zustand ist die Zahl der nicht erreichbaren Geräte; seine Attribute zeigen überwachte ZHA-/Hue-Geräte, batteriebetriebene Geräte und Geräte mit niedrigem Batteriestand. Szenen, Buttons, Events und Update-Entities werden nur bei der Rückfallprüfung über Entity-Zustände ausgeschlossen. Der Sensor aktualisiert sich bei Zustandsänderungen sofort und gleicht sich als Rückfallebene jede Minute ab.
 
 ## Installation über HACS
 

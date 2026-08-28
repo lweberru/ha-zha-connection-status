@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import datetime, timedelta
-import logging
 
 from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.components.zha.helpers import get_zha_gateway_proxy
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_STATE_CHANGED, Platform
 from homeassistant.core import Event, HomeAssistant, State, callback
@@ -30,9 +30,6 @@ from .const import (
     UNAVAILABLE_STATES,
     ZIGBEE_PLATFORMS,
 )
-
-_LOGGER = logging.getLogger(__name__)
-
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up ZHA Connection Status from a config entry."""
@@ -164,32 +161,6 @@ class ConnectionStatusMonitor:
                 for level in battery_levels.values()
             ),
         }
-        _LOGGER.debug(
-            "Connection status summary: %s; unavailable devices: %s",
-            summary,
-            [
-                {
-                    "device_id": device_id,
-                    "device_name": self._device_name(device_id, entity_id),
-                    "entities": {
-                        registry_entry.entity_id: (
-                            self.hass.states.get(registry_entry.entity_id).state
-                            if self.hass.states.get(registry_entry.entity_id)
-                            else None
-                        )
-                        for registry_entry in er.async_entries_for_device(
-                            self.entity_registry, device_id
-                        )
-                        if (
-                            registry_entry.platform in ZIGBEE_PLATFORMS
-                            and self._is_monitored_entity(registry_entry.entity_id)
-                        )
-                    },
-                }
-                for device_id, entity_id in unavailable_devices.items()
-                if entity_id is not None
-            ],
-        )
         return summary
 
     @callback
@@ -361,11 +332,9 @@ class ConnectionStatusMonitor:
     @callback
     def _async_unavailable_entity_id(self, device_id: str) -> str | None:
         """Return an entity only when all relevant entities are unavailable."""
+        registry_entries = er.async_entries_for_device(self.entity_registry, device_id)
         relevant_entities = [
-            registry_entry.entity_id
-            for registry_entry in er.async_entries_for_device(
-                self.entity_registry, device_id
-            )
+            registry_entry.entity_id for registry_entry in registry_entries
             if (
                 registry_entry.platform in ZIGBEE_PLATFORMS
                 and self._is_monitored_entity(registry_entry.entity_id)
@@ -373,6 +342,16 @@ class ConnectionStatusMonitor:
         ]
         if not relevant_entities:
             return None
+
+        if any(entry.platform == "zha" for entry in registry_entries):
+            zha_available = self._zha_device_available(device_id)
+            if zha_available is not None:
+                return None if zha_available else relevant_entities[0]
+
+        if any(entry.platform == "hue" for entry in registry_entries):
+            hue_available = self._hue_device_available(device_id)
+            if hue_available is not None:
+                return None if hue_available else relevant_entities[0]
 
         unavailable_entities = [
             entity_id
@@ -384,6 +363,48 @@ class ConnectionStatusMonitor:
             return None
 
         return unavailable_entities[0]
+
+    @callback
+    def _zha_device_available(self, device_id: str) -> bool | None:
+        """Return ZHA's authoritative availability for a registered device."""
+        zha_gateway_proxy = get_zha_gateway_proxy(self.hass)
+        for device_proxy in zha_gateway_proxy.device_proxies.values():
+            device_info = device_proxy.zha_device_info
+            if device_info["device_reg_id"] == device_id:
+                return device_info["available"]
+
+        return None
+
+    @callback
+    def _hue_device_available(self, device_id: str) -> bool | None:
+        """Return Hue's Zigbee connectivity status for a registered device."""
+        device = self.device_registry.async_get(device_id)
+        if device is None:
+            return None
+
+        hue_device_ids = {
+            identifier for domain, identifier in device.identifiers if domain == "hue"
+        }
+        if not hue_device_ids:
+            return None
+
+        for config_entry_id in device.config_entries:
+            config_entry = self.hass.config_entries.async_get_entry(config_entry_id)
+            if config_entry is None or config_entry.domain != "hue":
+                continue
+
+            bridge = config_entry.runtime_data
+            if bridge is None:
+                continue
+
+            for hue_device_id in hue_device_ids:
+                connectivity = bridge.api.devices.get_zigbee_connectivity(
+                    hue_device_id
+                )
+                if connectivity is not None:
+                    return connectivity.status.value == "connected"
+
+        return None
 
     @staticmethod
     def _is_monitored_entity(entity_id: str) -> bool:
