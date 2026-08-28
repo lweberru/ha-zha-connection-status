@@ -23,6 +23,7 @@ from .const import (
     DEFAULT_LOW_BATTERY_THRESHOLD,
     DOMAIN,
     MESSAGES,
+    MONITORED_ENTITY_DOMAINS,
     NOTIFICATION_ID_PREFIX,
     UNAVAILABLE_STATES,
     ZIGBEE_PLATFORMS,
@@ -193,6 +194,10 @@ class ConnectionStatusMonitor:
         if not device_id:
             return
 
+        if not self._is_monitored_entity(registry_entry.entity_id):
+            self._async_notify_listeners()
+            return
+
         was_unavailable = old_state is not None and old_state.state in UNAVAILABLE_STATES
         is_unavailable = new_state.state in UNAVAILABLE_STATES
 
@@ -299,14 +304,35 @@ class ConnectionStatusMonitor:
 
     @callback
     def _async_unavailable_entity_id(self, device_id: str) -> str | None:
-        """Return one currently unavailable monitored Zigbee entity."""
-        for registry_entry in er.async_entries_for_device(self.entity_registry, device_id):
-            if registry_entry.platform not in ZIGBEE_PLATFORMS:
-                continue
-            state = self.hass.states.get(registry_entry.entity_id)
-            if state and state.state in UNAVAILABLE_STATES:
-                return registry_entry.entity_id
-        return None
+        """Return an entity only when all relevant entities are unavailable."""
+        relevant_entities = [
+            registry_entry.entity_id
+            for registry_entry in er.async_entries_for_device(
+                self.entity_registry, device_id
+            )
+            if (
+                registry_entry.platform in ZIGBEE_PLATFORMS
+                and self._is_monitored_entity(registry_entry.entity_id)
+            )
+        ]
+        if not relevant_entities:
+            return None
+
+        unavailable_entities = [
+            entity_id
+            for entity_id in relevant_entities
+            if (state := self.hass.states.get(entity_id))
+            and state.state in UNAVAILABLE_STATES
+        ]
+        if len(unavailable_entities) != len(relevant_entities):
+            return None
+
+        return unavailable_entities[0]
+
+    @staticmethod
+    def _is_monitored_entity(entity_id: str) -> bool:
+        """Return whether an entity reports device availability meaningfully."""
+        return entity_id.partition(".")[0] in MONITORED_ENTITY_DOMAINS
 
     def _battery_context(self, device_id: str) -> str:
         """Return the latest battery information for a battery-powered device."""
@@ -323,12 +349,14 @@ class ConnectionStatusMonitor:
 
     def _battery_level(self, device_id: str) -> float | None:
         """Return the latest reported battery level for a device."""
-        for registry_entry in er.async_entries_for_device(self.entity_registry, device_id):
-            if registry_entry.device_class != SensorDeviceClass.BATTERY:
-                continue
-
+        for registry_entry in er.async_entries_for_device(
+            self.entity_registry, device_id
+        ):
             state = self.hass.states.get(registry_entry.entity_id)
-            if state is None:
+            if (
+                state is None
+                or state.attributes.get("device_class") != SensorDeviceClass.BATTERY
+            ):
                 continue
 
             try:

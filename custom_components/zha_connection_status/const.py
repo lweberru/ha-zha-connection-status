@@ -16,6 +16,22 @@ DEFAULT_LOW_BATTERY_THRESHOLD: Final = 20
 NOTIFICATION_ID_PREFIX: Final = "zha_connection_status_"
 
 ZIGBEE_PLATFORMS: Final = frozenset({"zha", "hue"})
+MONITORED_ENTITY_DOMAINS: Final = frozenset(
+	{
+		"binary_sensor",
+		"climate",
+		"cover",
+		"fan",
+		"humidifier",
+		"light",
+		"lock",
+		"sensor",
+		"siren",
+		"switch",
+		"valve",
+		"water_heater",
+	}
+)
 UNAVAILABLE_STATES: Final = frozenset({"unavailable", "unknown"})
 
 MESSAGES: Final = {

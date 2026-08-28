@@ -5,3 +5,4 @@ __pycache__/
 .coverage
 coverage.xml
 .mypy_cache/
+tools/.ha_api.local.json
