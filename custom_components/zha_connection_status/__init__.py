@@ -210,12 +210,11 @@ class ConnectionStatusMonitor:
             self._async_notify_listeners()
             return
 
-        was_unavailable = old_state is not None and old_state.state in UNAVAILABLE_STATES
         is_unavailable = new_state.state in UNAVAILABLE_STATES
 
-        if is_unavailable and not was_unavailable:
+        if is_unavailable:
             self._async_schedule_offline_check(device_id)
-        elif was_unavailable and not is_unavailable:
+        elif old_state is not None and old_state.state in UNAVAILABLE_STATES:
             self._async_handle_recovery(device_id, entity_id, new_state)
 
         self._async_notify_listeners()
