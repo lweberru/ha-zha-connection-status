@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import datetime, timedelta
+import logging
 
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
@@ -29,6 +30,9 @@ from .const import (
     UNAVAILABLE_STATES,
     ZIGBEE_PLATFORMS,
 )
+
+_LOGGER = logging.getLogger(__name__)
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up ZHA Connection Status from a config entry."""
@@ -143,13 +147,16 @@ class ConnectionStatusMonitor:
         battery_levels = {
             device_id: self._battery_level(device_id) for device_id in device_ids
         }
-        return {
+        unavailable_devices = {
+            device_id: self._async_unavailable_entity_id(device_id)
+            for device_id in device_ids
+        }
+        summary = {
             "monitored_devices": len(device_platforms),
             "zha_devices": sum("zha" in platforms for platforms in device_platforms.values()),
             "hue_devices": sum("hue" in platforms for platforms in device_platforms.values()),
             "unavailable_devices": sum(
-                self._async_unavailable_entity_id(device_id) is not None
-                for device_id in device_ids
+                entity_id is not None for entity_id in unavailable_devices.values()
             ),
             "battery_devices": sum(level is not None for level in battery_levels.values()),
             "low_battery_devices": sum(
@@ -157,6 +164,33 @@ class ConnectionStatusMonitor:
                 for level in battery_levels.values()
             ),
         }
+        _LOGGER.debug(
+            "Connection status summary: %s; unavailable devices: %s",
+            summary,
+            [
+                {
+                    "device_id": device_id,
+                    "device_name": self._device_name(device_id, entity_id),
+                    "entities": {
+                        registry_entry.entity_id: (
+                            self.hass.states.get(registry_entry.entity_id).state
+                            if self.hass.states.get(registry_entry.entity_id)
+                            else None
+                        )
+                        for registry_entry in er.async_entries_for_device(
+                            self.entity_registry, device_id
+                        )
+                        if (
+                            registry_entry.platform in ZIGBEE_PLATFORMS
+                            and self._is_monitored_entity(registry_entry.entity_id)
+                        )
+                    },
+                }
+                for device_id, entity_id in unavailable_devices.items()
+                if entity_id is not None
+            ],
+        )
+        return summary
 
     @callback
     def _async_restore_device_states(self) -> None:
