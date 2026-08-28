@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
+
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_track_time_interval
 
 from . import ConnectionStatusMonitor
 from .const import DOMAIN
@@ -51,6 +54,19 @@ class ConnectionStatusSensor(SensorEntity):
         """Subscribe to monitor updates."""
         await super().async_added_to_hass()
         self.async_on_remove(self.monitor.async_add_listener(self._async_handle_update))
+        self.async_on_remove(
+            async_track_time_interval(
+                self.hass,
+                self._async_handle_periodic_update,
+                timedelta(minutes=1),
+            )
+        )
+        self._async_handle_update()
+
+    @callback
+    def _async_handle_periodic_update(self, _now: datetime) -> None:
+        """Refresh the diagnostic status even without a device event."""
+        self._async_handle_update()
 
     @callback
     def _async_handle_update(self) -> None:
