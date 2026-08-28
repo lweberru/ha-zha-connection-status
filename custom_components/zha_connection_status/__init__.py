@@ -398,9 +398,12 @@ class ConnectionStatusMonitor:
                 continue
 
             for hue_device_id in hue_device_ids:
-                connectivity = bridge.api.devices.get_zigbee_connectivity(
-                    hue_device_id
-                )
+                try:
+                    connectivity = bridge.api.devices.get_zigbee_connectivity(
+                        hue_device_id
+                    )
+                except KeyError:
+                    continue
                 if connectivity is not None:
                     return connectivity.status.value == "connected"
 
