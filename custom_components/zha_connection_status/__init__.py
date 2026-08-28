@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import datetime, timedelta
+import logging
 
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.components.zha.helpers import get_zha_gateway_proxy
@@ -30,6 +31,9 @@ from .const import (
     UNAVAILABLE_STATES,
     ZIGBEE_PLATFORMS,
 )
+
+_LOGGER = logging.getLogger(__name__)
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up ZHA Connection Status from a config entry."""
@@ -402,12 +406,23 @@ class ConnectionStatusMonitor:
                         hue_device_id
                     )
                 except KeyError:
+                    _LOGGER.debug(
+                        "Hue device %s has no current connectivity record",
+                        hue_device_id,
+                    )
                     continue
                 if connectivity is not None:
-                    return connectivity.status.value not in {
+                    is_available = connectivity.status.value not in {
                         "disconnected",
                         "connectivity_issue",
                     }
+                    _LOGGER.debug(
+                        "Hue device %s connectivity is %s (available: %s)",
+                        hue_device_id,
+                        connectivity.status.value,
+                        is_available,
+                    )
+                    return is_available
 
         return None
 
