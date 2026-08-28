@@ -2,13 +2,14 @@
   "config": {
     "step": {
       "user": {
-        "title": "ZHA Connection Status einrichten",
+        "title": "Zigbee Connection Status einrichten",
         "description": "Wahle die Notify-Dienste aus, die Benachrichtigungen erhalten sollen.",
         "data": {
           "notification_targets": "Empfanger fur Offline-Meldungen",
           "recovery_targets": "Empfanger fur Online-Meldungen",
           "delay": "Wartezeit vor Offline-Meldung (Sekunden)",
-          "language": "Sprache der Benachrichtigungen"
+          "language": "Sprache der Benachrichtigungen",
+          "low_battery_threshold": "Schwellenwert für niedrigen Batteriestand (Prozent)"
         }
       }
     }
@@ -16,13 +17,14 @@
   "options": {
     "step": {
       "init": {
-        "title": "ZHA Connection Status",
+        "title": "Zigbee Connection Status",
         "description": "Online-Meldungen werden nur an die dafur ausgewahlten Gerate gesendet.",
         "data": {
           "notification_targets": "Empfanger fur Offline-Meldungen",
           "recovery_targets": "Empfanger fur Online-Meldungen",
           "delay": "Wartezeit vor Offline-Meldung (Sekunden)",
-          "language": "Sprache der Benachrichtigungen"
+          "language": "Sprache der Benachrichtigungen",
+          "low_battery_threshold": "Schwellenwert für niedrigen Batteriestand (Prozent)"
         }
       }
     }

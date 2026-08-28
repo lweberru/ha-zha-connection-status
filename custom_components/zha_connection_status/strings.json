@@ -2,13 +2,14 @@
   "config": {
     "step": {
       "user": {
-        "title": "Set up ZHA Connection Status",
+        "title": "Set up Zigbee Connection Status",
         "description": "Select the notify services that should receive notifications.",
         "data": {
           "notification_targets": "Offline notification recipients",
           "recovery_targets": "Online notification recipients",
           "delay": "Wait before offline notification (seconds)",
-          "language": "Notification language"
+          "language": "Notification language",
+          "low_battery_threshold": "Low battery threshold (percent)"
         }
       }
     }
@@ -16,13 +17,14 @@
   "options": {
     "step": {
       "init": {
-        "title": "ZHA Connection Status",
+        "title": "Zigbee Connection Status",
         "description": "Online notifications are only sent to the selected devices.",
         "data": {
           "notification_targets": "Offline notification recipients",
           "recovery_targets": "Online notification recipients",
           "delay": "Wait before offline notification (seconds)",
-          "language": "Notification language"
+          "language": "Notification language",
+          "low_battery_threshold": "Low battery threshold (percent)"
         }
       }
     }

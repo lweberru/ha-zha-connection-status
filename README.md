@@ -2,11 +2,11 @@
 
 [Deutsch](README.de.md)
 
-A Home Assistant custom integration that monitors the availability of ZHA Zigbee devices. It creates a notification in the Home Assistant frontend and notifies any number of mobile devices when a device becomes unavailable. When the device reconnects, the frontend notification is dismissed and selected devices can optionally receive a recovery notification.
+A Home Assistant custom integration that monitors the availability of ZHA and Philips Hue Zigbee devices. It creates a notification in the Home Assistant frontend and notifies any number of mobile devices when a device becomes unavailable. When the device reconnects, the frontend notification is dismissed and selected devices can optionally receive a recovery notification.
 
 ## Features
 
-- Monitors all ZHA entities for the `unavailable` and `unknown` states.
+- Monitors ZHA and Philips Hue entities for the `unavailable` and `unknown` states.
 - Waits for a configurable period before sending an offline notification (30 seconds by default), avoiding alerts for short interruptions.
 - Creates one persistent frontend notification per Zigbee device.
 - Automatically dismisses the notification once the device reconnects.
@@ -29,13 +29,14 @@ Choose from the available `notify` services during setup.
 - **Online notification recipients:** Only these devices receive the notification that the device is available again. This enables recovery notifications for each mobile device individually.
 - **Wait time:** The number of seconds a device must be unavailable before a notification is sent.
 - **Notification language:** The language of frontend and mobile notifications. English is the default; German is also available.
+- **Low battery threshold:** The battery percentage at or below which the offline notification identifies a low battery as a possible cause. The latest battery level is otherwise shown when available. Default: 20%.
 
 You can change these settings later by selecting **Configure** for the integration.
 
 ## Requirements
 
 - Home Assistant 2024.4 or newer
-- The official [ZHA integration](https://www.home-assistant.io/integrations/zha/)
+- The official [ZHA](https://www.home-assistant.io/integrations/zha/) and/or [Philips Hue](https://www.home-assistant.io/integrations/hue/) integration
 - At least one configured notify service, such as the Home Assistant Companion App
 
 ## Development

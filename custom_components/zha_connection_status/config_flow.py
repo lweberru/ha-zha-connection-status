@@ -11,10 +11,12 @@ from homeassistant.helpers import selector
 from .const import (
     CONF_DELAY,
     CONF_LANGUAGE,
+    CONF_LOW_BATTERY_THRESHOLD,
     CONF_NOTIFICATION_TARGETS,
     CONF_RECOVERY_TARGETS,
     DEFAULT_DELAY,
     DEFAULT_LANGUAGE,
+    DEFAULT_LOW_BATTERY_THRESHOLD,
     DOMAIN,
 )
 
@@ -71,6 +73,12 @@ class ZHAConnectionStatusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ): selector.SelectSelector(
                     selector.SelectSelectorConfig(options=["en", "de"])
                 ),
+                vol.Optional(
+                    CONF_LOW_BATTERY_THRESHOLD,
+                    default=defaults.get(
+                        CONF_LOW_BATTERY_THRESHOLD, DEFAULT_LOW_BATTERY_THRESHOLD
+                    ),
+                ): vol.All(vol.Coerce(int), vol.Range(min=0, max=100)),
             }
         )
 
