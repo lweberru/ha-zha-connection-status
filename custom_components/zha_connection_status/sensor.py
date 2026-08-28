@@ -55,4 +55,4 @@ class ConnectionStatusSensor(SensorEntity):
     @callback
     def _async_handle_update(self) -> None:
         """Write the latest summary to Home Assistant."""
-        self.async_write_ha_state()
+        self.schedule_update_ha_state()

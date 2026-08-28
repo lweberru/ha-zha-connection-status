@@ -229,9 +229,20 @@ class ConnectionStatusMonitor:
         self.pending_checks[device_id] = async_call_later(
             self.hass,
             delay,
-            lambda _now: self._async_confirm_offline(device_id),
+            self._async_confirm_offline_callback(device_id),
         )
         self._async_notify_listeners()
+
+    def _async_confirm_offline_callback(
+        self, device_id: str
+    ) -> Callable[[datetime], None]:
+        """Create an event-loop-safe delayed offline callback."""
+
+        @callback
+        def async_confirm_offline(_now: datetime) -> None:
+            self._async_confirm_offline(device_id)
+
+        return async_confirm_offline
 
     @callback
     def _async_confirm_offline(self, device_id: str) -> None:
