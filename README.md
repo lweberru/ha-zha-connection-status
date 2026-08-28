@@ -7,13 +7,13 @@ A Home Assistant custom integration that monitors the availability of ZHA and Ph
 ## Features
 
 - Uses ZHA's own device-level `available` status, the same source as the ZHA device list, instead of individual entity states such as LQI or RSSI.
-- Uses Philips Hue's Zigbee connectivity status when it is available; entity states are used only as a fallback.
+- Uses Philips Hue's Zigbee connectivity status. Devices without a current Hue connectivity record are not reported as unavailable based on stale entity states.
 - Waits for a configurable period before sending an offline notification (30 seconds by default), avoiding alerts for short interruptions.
 - Creates one persistent frontend notification per Zigbee device.
 - Automatically dismisses the notification once the device reconnects.
 - Restores monitoring cleanly after Home Assistant restarts and integration updates without duplicating mobile alerts.
 - Supports any number of `notify` services, with separate recipient lists for offline and recovery notifications.
-- Adds a diagnostic **Connection status** sensor. Its state is the number of unavailable devices; its attributes show monitored ZHA/Hue devices, battery-powered devices, and low-battery devices. Scenes, buttons, events, and update entities are excluded from fallback availability checks. It updates immediately on state changes and reconciles every minute as a fallback.
+- Adds a diagnostic **Connection status** sensor. Its state is the number of unavailable devices; its attributes show monitored ZHA/Hue devices, battery-powered devices, and low-battery devices. It updates immediately on state changes and reconciles every minute as a fallback.
 
 ## Installation through HACS
 

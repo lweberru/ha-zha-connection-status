@@ -350,8 +350,7 @@ class ConnectionStatusMonitor:
 
         if any(entry.platform == "hue" for entry in registry_entries):
             hue_available = self._hue_device_available(device_id)
-            if hue_available is not None:
-                return None if hue_available else relevant_entities[0]
+            return None if hue_available is not False else relevant_entities[0]
 
         unavailable_entities = [
             entity_id
@@ -405,7 +404,10 @@ class ConnectionStatusMonitor:
                 except KeyError:
                     continue
                 if connectivity is not None:
-                    return connectivity.status.value == "connected"
+                    return connectivity.status.value not in {
+                        "disconnected",
+                        "connectivity_issue",
+                    }
 
         return None
 
