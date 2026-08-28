@@ -87,7 +87,7 @@ class ZHAConnectionStatusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         config_entry: config_entries.ConfigEntry,
     ) -> OptionsFlow:
         """Return the options flow for this handler."""
-        return OptionsFlow(config_entry)
+        return OptionsFlow()
 
 
 class OptionsFlow(OptionsFlowWithReload):
