@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import datetime, timedelta
 
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
@@ -10,7 +11,7 @@ from homeassistant.const import EVENT_STATE_CHANGED, Platform
 from homeassistant.core import Event, HomeAssistant, State, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.event import async_call_later
+from homeassistant.helpers.event import async_call_later, async_track_time_interval
 
 from .const import (
     CONF_DELAY,
@@ -82,17 +83,28 @@ class ConnectionStatusMonitor:
         unsubscribe = self.hass.bus.async_listen(
             EVENT_STATE_CHANGED, self._async_handle_state_change
         )
+        unsubscribe_periodic_update = async_track_time_interval(
+            self.hass,
+            self._async_handle_periodic_update,
+            timedelta(minutes=1),
+        )
         self._async_restore_device_states()
 
         @callback
         def async_stop() -> None:
             """Stop monitoring and cancel delayed checks."""
             unsubscribe()
+            unsubscribe_periodic_update()
             for cancel_check in self.pending_checks.values():
                 cancel_check()
             self.pending_checks.clear()
 
         return async_stop
+
+    @callback
+    def _async_handle_periodic_update(self, _now: datetime) -> None:
+        """Reconcile device availability if an event was missed."""
+        self._async_restore_device_states()
 
     @callback
     def async_add_listener(self, listener: Callable[[], None]) -> Callable[[], None]:
