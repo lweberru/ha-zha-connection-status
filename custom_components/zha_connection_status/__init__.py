@@ -174,19 +174,28 @@ class ConnectionStatusMonitor:
         device_ids = {
             registry_entry.device_id
             for registry_entry in self.entity_registry.entities.values()
-            if (
-                registry_entry.platform in ZIGBEE_PLATFORMS
-                and registry_entry.device_id
-                and not self._is_device_excluded(registry_entry.device_id)
-            )
+            if registry_entry.platform in ZIGBEE_PLATFORMS and registry_entry.device_id
         }
 
         for device_id in device_ids:
-            unavailable_entity_id = self._async_unavailable_entity_id(device_id)
             notification_id = self._notification_id(device_id)
             notification_state = self.hass.states.get(
                 f"persistent_notification.{notification_id}"
             )
+
+            if self._is_device_excluded(device_id):
+                self.offline_devices.discard(device_id)
+                if notification_state:
+                    self.hass.async_create_task(
+                        self.hass.services.async_call(
+                            "persistent_notification",
+                            "dismiss",
+                            {"notification_id": notification_id},
+                        )
+                    )
+                continue
+
+            unavailable_entity_id = self._async_unavailable_entity_id(device_id)
 
             if unavailable_entity_id:
                 if notification_state:
