@@ -189,10 +189,12 @@ class ConnectionStatusMonitor:
                 else:
                     self._async_schedule_offline_check(device_id)
             elif notification_state:
-                self.hass.services.async_call(
-                    "persistent_notification",
-                    "dismiss",
-                    {"notification_id": notification_id},
+                self.hass.async_create_task(
+                    self.hass.services.async_call(
+                        "persistent_notification",
+                        "dismiss",
+                        {"notification_id": notification_id},
+                    )
                 )
 
         self._async_notify_listeners()
@@ -286,19 +288,21 @@ class ConnectionStatusMonitor:
         _LOGGER.debug(
             "Creating offline notification for %s (%s)", device_id, device_name
         )
-        self.hass.services.async_call(
-            "persistent_notification",
-            "create",
-            {
-                "title": self.messages["offline_title"],
-                "message": self.messages["offline_persistent"].format(
-                    device_name=device_name,
-                    entity_id=entity_id,
-                    state_name=state_name,
-                    battery_context=battery_context,
-                ),
-                "notification_id": self._notification_id(device_id),
-            },
+        self.hass.async_create_task(
+            self.hass.services.async_call(
+                "persistent_notification",
+                "create",
+                {
+                    "title": self.messages["offline_title"],
+                    "message": self.messages["offline_persistent"].format(
+                        device_name=device_name,
+                        entity_id=entity_id,
+                        state_name=state_name,
+                        battery_context=battery_context,
+                    ),
+                    "notification_id": self._notification_id(device_id),
+                },
+            )
         )
         self._async_send_mobile_notifications(
             self.entry.options.get(CONF_NOTIFICATION_TARGETS, []),
@@ -333,10 +337,12 @@ class ConnectionStatusMonitor:
 
         self.offline_devices.discard(device_id)
         device_name = self._device_name(device_id, entity_id)
-        self.hass.services.async_call(
-            "persistent_notification",
-            "dismiss",
-            {"notification_id": self._notification_id(device_id)},
+        self.hass.async_create_task(
+            self.hass.services.async_call(
+                "persistent_notification",
+                "dismiss",
+                {"notification_id": self._notification_id(device_id)},
+            )
         )
         self._async_send_mobile_notifications(
             self.entry.options.get(CONF_RECOVERY_TARGETS, []),
@@ -499,6 +505,8 @@ class ConnectionStatusMonitor:
         """Send a notification through each configured notify service."""
         for target in targets:
             if self.hass.services.has_service("notify", target):
-                self.hass.services.async_call(
-                    "notify", target, {"title": title, "message": message}
+                self.hass.async_create_task(
+                    self.hass.services.async_call(
+                        "notify", target, {"title": title, "message": message}
+                    )
                 )
