@@ -232,9 +232,16 @@ class ConnectionStatusMonitor:
     def _async_schedule_offline_check(self, device_id: str) -> None:
         """Wait before announcing a device as unavailable."""
         if device_id in self.pending_checks or device_id in self.offline_devices:
+            _LOGGER.debug(
+                "Offline check not scheduled for %s: pending=%s, offline=%s",
+                device_id,
+                device_id in self.pending_checks,
+                device_id in self.offline_devices,
+            )
             return
 
         delay = self.entry.options.get(CONF_DELAY, DEFAULT_DELAY)
+        _LOGGER.debug("Scheduling offline check for %s in %s seconds", device_id, delay)
         self.pending_checks[device_id] = async_call_later(
             self.hass,
             delay,
@@ -259,6 +266,7 @@ class ConnectionStatusMonitor:
         self.pending_checks.pop(device_id, None)
         entity_id = self._async_unavailable_entity_id(device_id)
         if not entity_id:
+            _LOGGER.debug("Offline check for %s found the device available", device_id)
             self._async_notify_listeners()
             return
 
@@ -271,9 +279,13 @@ class ConnectionStatusMonitor:
         if self.hass.states.get(
             f"persistent_notification.{self._notification_id(device_id)}"
         ):
+            _LOGGER.debug("Offline notification for %s already exists", device_id)
             self._async_notify_listeners()
             return
 
+        _LOGGER.debug(
+            "Creating offline notification for %s (%s)", device_id, device_name
+        )
         self.hass.services.async_call(
             "persistent_notification",
             "create",
