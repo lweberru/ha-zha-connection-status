@@ -9,6 +9,7 @@ CONF_RECOVERY_TARGETS: Final = "recovery_targets"
 CONF_DELAY: Final = "delay"
 CONF_LANGUAGE: Final = "language"
 CONF_LOW_BATTERY_THRESHOLD: Final = "low_battery_threshold"
+CONF_EXCLUDED_DEVICES: Final = "excluded_devices"
 
 DEFAULT_DELAY: Final = 30
 DEFAULT_LANGUAGE: Final = "en"

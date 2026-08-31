@@ -9,7 +9,8 @@
           "recovery_targets": "Online notification recipients",
           "delay": "Wait before offline notification (seconds)",
           "language": "Notification language",
-          "low_battery_threshold": "Low battery threshold (percent)"
+          "low_battery_threshold": "Low battery threshold (percent)",
+          "excluded_devices": "Excluded devices"
         }
       }
     }
@@ -24,7 +25,8 @@
           "recovery_targets": "Online notification recipients",
           "delay": "Wait before offline notification (seconds)",
           "language": "Notification language",
-          "low_battery_threshold": "Low battery threshold (percent)"
+          "low_battery_threshold": "Low battery threshold (percent)",
+          "excluded_devices": "Excluded devices"
         }
       }
     }

@@ -32,6 +32,7 @@ Wähle bei der Einrichtung aus den verfügbaren `notify`-Diensten.
 - **Wartezeit:** Zeit in Sekunden, die ein Gerät nicht erreichbar sein muss, bevor eine Meldung gesendet wird.
 - **Sprache der Benachrichtigungen:** Sprache der Frontend- und Mobile-Benachrichtigungen. Englisch ist die Vorgabe, Deutsch steht ebenfalls zur Auswahl.
 - **Schwellenwert für niedrigen Batteriestand:** Bei einem Batteriestand an oder unter diesem Prozentwert nennt die Offline-Meldung eine schwache Batterie als mögliche Ursache. Andernfalls wird der letzte Batteriestand angezeigt, sofern verfügbar. Vorgabe: 20 %.
+- **Ausgeschlossene Geräte:** Hier ausgewählte Geräte werden vollständig ignoriert: Sie zählen weder im Diagnosesensor noch lösen sie Offline- oder Recovery-Meldungen aus. Verwende dies für Geräte, deren Hue-Konnektivitätsstatus nachweislich unzuverlässig ist.
 
 Die Einstellung lässt sich nach der Einrichtung über **Konfigurieren** in der Integration ändern.
 

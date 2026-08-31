@@ -32,6 +32,7 @@ Choose from the available `notify` services during setup.
 - **Wait time:** The number of seconds a device must be unavailable before a notification is sent.
 - **Notification language:** The language of frontend and mobile notifications. English is the default; German is also available.
 - **Low battery threshold:** The battery percentage at or below which the offline notification identifies a low battery as a possible cause. The latest battery level is otherwise shown when available. Default: 20%.
+- **Excluded devices:** Devices selected here are ignored completely: they do not contribute to the diagnostic sensor and never trigger offline or recovery notifications. Use this for devices whose Hue connectivity status is known to be unreliable.
 
 You can change these settings later by selecting **Configure** for the integration.
 

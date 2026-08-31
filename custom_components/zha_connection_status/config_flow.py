@@ -10,6 +10,7 @@ from homeassistant.helpers import selector
 
 from .const import (
     CONF_DELAY,
+    CONF_EXCLUDED_DEVICES,
     CONF_LANGUAGE,
     CONF_LOW_BATTERY_THRESHOLD,
     CONF_NOTIFICATION_TARGETS,
@@ -79,6 +80,12 @@ class ZHAConnectionStatusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_LOW_BATTERY_THRESHOLD, DEFAULT_LOW_BATTERY_THRESHOLD
                     ),
                 ): vol.All(vol.Coerce(int), vol.Range(min=0, max=100)),
+                vol.Optional(
+                    CONF_EXCLUDED_DEVICES,
+                    default=defaults.get(CONF_EXCLUDED_DEVICES, []),
+                ): selector.DeviceSelector(
+                    selector.DeviceSelectorConfig(multiple=True)
+                ),
             }
         )
 

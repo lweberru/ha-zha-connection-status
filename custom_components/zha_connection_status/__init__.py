@@ -136,6 +136,7 @@ class ConnectionStatusMonitor:
             if (
                 registry_entry.platform in ZIGBEE_PLATFORMS
                 and registry_entry.device_id
+                and not self._is_device_excluded(registry_entry.device_id)
             ):
                 device_platforms.setdefault(registry_entry.device_id, set()).add(
                     registry_entry.platform
@@ -173,7 +174,11 @@ class ConnectionStatusMonitor:
         device_ids = {
             registry_entry.device_id
             for registry_entry in self.entity_registry.entities.values()
-            if registry_entry.platform in ZIGBEE_PLATFORMS and registry_entry.device_id
+            if (
+                registry_entry.platform in ZIGBEE_PLATFORMS
+                and registry_entry.device_id
+                and not self._is_device_excluded(registry_entry.device_id)
+            )
         }
 
         for device_id in device_ids:
@@ -215,6 +220,9 @@ class ConnectionStatusMonitor:
 
         device_id = registry_entry.device_id
         if not device_id:
+            return
+
+        if self._is_device_excluded(device_id):
             return
 
         if not self._is_monitored_entity(registry_entry.entity_id):
@@ -354,6 +362,9 @@ class ConnectionStatusMonitor:
     @callback
     def _async_unavailable_entity_id(self, device_id: str) -> str | None:
         """Return an entity only when all relevant entities are unavailable."""
+        if self._is_device_excluded(device_id):
+            return None
+
         registry_entries = er.async_entries_for_device(self.entity_registry, device_id)
         relevant_entities = [
             registry_entry.entity_id for registry_entry in registry_entries
@@ -384,6 +395,10 @@ class ConnectionStatusMonitor:
             return None
 
         return unavailable_entities[0]
+
+    def _is_device_excluded(self, device_id: str) -> bool:
+        """Return whether a device is intentionally excluded from monitoring."""
+        return device_id in self.entry.options.get(CONF_EXCLUDED_DEVICES, [])
 
     @callback
     def _zha_device_available(self, device_id: str) -> bool | None:
