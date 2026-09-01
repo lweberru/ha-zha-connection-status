@@ -17,6 +17,7 @@ from homeassistant.helpers.event import async_call_later, async_track_time_inter
 
 from .const import (
     CONF_DELAY,
+    CONF_EXCLUDED_DEVICES,
     CONF_LANGUAGE,
     CONF_LOW_BATTERY_THRESHOLD,
     CONF_NOTIFICATION_TARGETS,
